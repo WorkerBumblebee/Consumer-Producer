@@ -14,23 +14,39 @@ int main()
 
                 //Open am
         int shm_fd = shm_open("table", O_CREAT, 0666);
+ 
+                //Create a mapping of a virtual adress space,
+                //(default of 0 indicates) -
+                //kernel decides where the mapping should be
+                //the size of the mapping 32 bits (size of an int)
+                //allow for other processes to read and write
+                //the bits of the mapping
+                //all updates in the mapping are shared between processes
+                //starting at the first element (0)
         int *table = mmap(0, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
-/*int *zero;
-int v = 0;
-zero = &v;
-*/
-  	sem_t* fill = sem_open("fill", O_CREAT, 1666, 1);
-//      sem_t *fill; sem_init(fill, 1, 0);
-//      sem_t *avail = sem_open("available", O_CREAT, 0666, 2);
-//      sem_t *mutex = sem_open("mutex", O_CREAT, 0666, 1);
 
-/*      printf("%d", sem_getvalue(fill));
-        printf("%d", sem_getvalue(avail));
-        printf("%d", sem_getvalue(mutex));
-//printf("\n%d", *fill);
-//printf("\n%d",*avail);
-*/
-  	// Here we wait until space is available in
+                //Initialize the semaphores, each with a pointer to it,
+                //with a specified "name",
+                //created if not existing already,
+                //all bits able to be read or written
+                //and initialized with the intial value
+
+                         //fill - indicates the current number of elements
+                        //in the map, starts off as empty (0)
+       	sem_t* fill = sem_open("fill", O_CREAT, 1666, 1);
+
+                        //avail - indicates the number of spots remaning
+                        //in the map, starts off as all (2)
+        sem_t *avail = sem_open("available", O_CREAT, 0666, 2);
+ 
+                        //mutex - a mutex semaphore, restricting access to the
+                        //the map (critical section) to only ONE process at a time
+                        //(mutual exclusion) - indicates the number of reserved
+                        //spaces remaining for process (to enter the critical
+                        //section) - MAX 1
+        sem_t *mutex = sem_open("mutex", O_CREAT, 0666, 1);
+
+       	// Here we wait until space is available in
         // the shared buffer. We then wait a random
         // number of ms, use mutual exclusion on
         // incrementing the table, and signaling
